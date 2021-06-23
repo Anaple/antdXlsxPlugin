@@ -1,14 +1,16 @@
 import logo from './logo.svg';
 import './App.css';
-
+import { Updatexlsx } from './XlsxRead';
 function App() {
   return (
+    
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
+        <Updatexlsx backendUrl="https://localhost:3000" tableVisable={true}/>
         <a
           className="App-link"
           href="https://reactjs.org"
