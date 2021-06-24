@@ -72,14 +72,16 @@ export class Updatexlsx extends React.Component {
         try{
         axios.post(this.props.backendUrl, {
             data:this.state.data,
+            key:this.state.dataKey,
             time:new Date()
         }).then((res) => {
             let successInfo = "成功"
+            let errorInfo = "发送失败"
             
-            if (res.data.success === true) {
-                message.success({ content: res.data.info, successInfo  , duration: 2 })
+            if (res.status === 200) {
+                message.success({ content: res.status, successInfo  , duration: 2 })
             }else {
-                message.error({ content: res.data.info,  duration: 2 })
+                message.error({ content: res.status, errorInfo, duration: 2 })
               }
         }
             

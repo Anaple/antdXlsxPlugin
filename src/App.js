@@ -10,7 +10,7 @@ function App() {
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
-        <Updatexlsx backendUrl="https://localhost:3000" tableVisable={true}/>
+        <Updatexlsx backendUrl="https://localhost:3000/" tableVisable={true}/>
         <a
           className="App-link"
           href="https://reactjs.org"
