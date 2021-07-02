@@ -3,7 +3,27 @@ import React from 'react';
 import { Upload, Button, Table, message } from 'antd';
 import axios from 'axios';
 
+const XlsxTable =(props) => {
+    var columns = [];
+    console.log(props.dataKey)
+    var key = 0
+    props.dataKey.forEach((item) => {
+        columns.push({
+            title: item,
+            dataIndex: item,
+            key: key
 
+        })
+        key++
+    });
+    
+  
+    return (
+        <><Table dataSource={props.columnsValue} columns={columns} /></>
+
+    );
+
+}
 
 export class Updatexlsx extends React.Component {
     constructor(props) {
@@ -11,6 +31,9 @@ export class Updatexlsx extends React.Component {
         this.state = {
             data: [], //主要数据
             dataKey: [], //jsonKey值
+            canUpdateData: [], //验证后的值
+            columnsValue: [] // 表渲染值
+
 
         }
         this.loadxlsx = this.loadxlsx.bind(this);
@@ -32,7 +55,7 @@ export class Updatexlsx extends React.Component {
                 var sheet1 = workbook.Sheets[sheetName[0]];
                 var json = XLSX.utils.sheet_to_json(sheet1);
                 var keyObj = [];
-               
+
                 if (this.state.data.length === 0) {
                     for (var key in json[0]) {
                         keyObj.push(key)
@@ -53,6 +76,7 @@ export class Updatexlsx extends React.Component {
                 }
 
                 options.onSuccess();
+                this.checkValue(this.props.rules)
 
             } catch (e) {
                 console.log(e);
@@ -61,68 +85,13 @@ export class Updatexlsx extends React.Component {
         }
     }
     componentDidUpdate() {
-   
+
 
     }
     componentWillUnmount() {
 
     }
-    updateData(){
-        console.log("ONclick")
-        try{
-        axios.post(this.props.backendUrl, {
-            data:this.state.data,
-            key:this.state.dataKey,
-            time:new Date()
-        }).then((res) => {
-            let successInfo = "成功"
-            let errorInfo = "发送失败"
-            
-            if (res.status === 200) {
-                message.success({ content: res.status, successInfo  , duration: 2 })
-            }else {
-                message.error({ content: res.status, errorInfo, duration: 2 })
-              }
-        }
-            
-            
-            )
-    }catch(e){
-        message.error(e);
-    }
-
-    }
-    showTable(dataKey, dataObj ,visable) {
-        if (dataObj.length !== 0 && visable) {
-            var columns = [];
-            var dataSoure =[];
-            dataKey.forEach( (item) => {
-                columns.push({
-                    title: item,
-                    dataIndex: item,
-                    key: item
-
-                })
-            })
-            var key = 0 ;
-            dataObj.forEach((obj)=>{
-                dataSoure.push({
-                    key:key,
-                    obj
-                })
-                key++
-            })
-
-            return (
-                <><Table dataSource={dataObj} columns={columns} /><Button onClick={() => this.updateData()}> 上传</Button></>
-
-                );
-        } else {
-            return <></>;
-        }
-
-    }
-    onRemove(file) {
+    onRemove() {
         this.setState({
             data: [],
             dataKey: []
@@ -130,13 +99,101 @@ export class Updatexlsx extends React.Component {
         })
 
     }
+    updateData() {
+
+        try {
+            axios.post(this.props.backendUrl, {
+                data: this.state.canUpdateData,
+                key: this.state.dataKey,
+                time: new Date()
+            }).then((res) => {
+                let successInfo = "成功"
+                let errorInfo = "发送失败"
+
+                if (res.status === 200) {
+                    message.success({ content: res.status, successInfo, duration: 2 })
+                } else {
+                    message.error({ content: res.status, errorInfo, duration: 2 })
+                }
+            }
+
+
+            )
+        } catch (e) {
+            message.error(e);
+        }
+
+    }
+    checkValue(rules){
+        var dataSoure = [];
+        // eslint-disable-next-line no-cond-assign
+        if (this.state.data.length !== 0) {
+            const msgkey = 'updatable';
+            if (rules.length === this.state.dataKey.length) {
+                var flag = true
+                var i = 0;
+                for (i = 0; i < rules.length; i++) {
+                    console.log(i);
+                    if (rules[i] === this.state.dataKey[i]) {
+                        
+                    }
+                    else {
+
+                        flag = false
+                       
+                        message.error({ content: '读取失败' + rules[i] + '不与表中' + this.state.dataKey[i] + '相同', msgkey, duration: 3 });
+                      break;
+
+                    }
+                }
+
+
+              
+                if (flag) {
+                    var keyValue = 0;
+                    this.state.data.forEach((obj) => {
+                        let key = { key: keyValue }
+                        dataSoure.push({
+                            ...key, ...obj
+                        })
+                        keyValue++
+                    });
+                  
+                    this.setState({
+                        columnsValue:dataSoure,
+                        canUpdateData:this.state.data           
+                    })
+                    
+                    message.success({ content: '读取成功', msgkey, duration: 2 });
+                    this.onRemove();
+                    
+
+
+                  
+                 
+                } else {
+                    this.onRemove();
+                }
+            } else {
+                message.error({ content: '失败，文档不合规。值' + this.state.dataKey[rules.length] + "不存在", msgkey, duration: 2 });
+                this.onRemove()
+            }
+        }
+    
+
+    }
+
+    
+
+
+
 
 
     render() {
 
         return (
             <>
-                <Upload name="excel"  listType="text" onRemove={this.onRemove} customRequest={this.loadxlsx} accept="file" showUploadList={true}>
+                <Upload name="excel" listType="text" onRemove={this.onRemove} customRequest={this.loadxlsx} accept="file" showUploadList={this.props.showUploadList}>
 
                     <Button>
                         点击选择报表
@@ -144,8 +201,9 @@ export class Updatexlsx extends React.Component {
                     </Button>
 
                 </Upload>
-                {this.showTable(this.state.dataKey, this.state.data ,this.props.tableVisable)}
-                
+                <XlsxTable dataKey={this.props.rules} columnsValue={this.state.columnsValue}/>
+                <Button onClick={()=>this.updateData()}>点击上传</Button>
+
 
             </>
 
