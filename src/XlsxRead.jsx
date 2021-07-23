@@ -3,28 +3,21 @@ import React from 'react';
 import { Upload, Button, Table, message } from 'antd';
 import axios from 'axios';
 
-const XlsxTable =(props) => {
+const XlsxTable = (props) => {
     var columns = [];
-    console.log(props.dataKey)
     var key = 0
     props.dataKey.forEach((item) => {
         columns.push({
             title: item,
             dataIndex: item,
             key: key
-
         })
         key++
     });
-    
-  
     return (
         <><Table dataSource={props.columnsValue} columns={columns} /></>
-
     );
-
 }
-
 export class Updatexlsx extends React.Component {
     constructor(props) {
         super(props);
@@ -33,8 +26,6 @@ export class Updatexlsx extends React.Component {
             dataKey: [], //jsonKey值
             canUpdateData: [], //验证后的值
             columnsValue: [] // 表渲染值
-
-
         }
         this.loadxlsx = this.loadxlsx.bind(this);
         this.onRemove = this.onRemove.bind(this);
@@ -44,16 +35,24 @@ export class Updatexlsx extends React.Component {
     loadxlsx(options) {
         // const [res,setRes] = useState(undefined);
         console.log(options)
-
         var excelBuffer = new FileReader();
         excelBuffer.readAsBinaryString(options.file);
         //console.log(excelBuffer.readAsBinaryString(file));
         excelBuffer.onloadend = res => {
             try {
+                const sheet2JSONOpts = {
+                    /** Default value for null/undefined values */
+                    defval: ''//给defval赋值为空的字符串
+                }
+
                 var workbook = XLSX.read(res.target.result, { type: 'binary', cellDates: true, cellStyles: true });
                 var sheetName = workbook.SheetNames;
                 var sheet1 = workbook.Sheets[sheetName[0]];
-                var json = XLSX.utils.sheet_to_json(sheet1);
+
+                /** 转换为 json */
+                var json = XLSX.utils.sheet_to_json(sheet1,sheet2JSONOpts);
+                /** 初始化keyObj
+                */
                 var keyObj = [];
 
                 if (this.state.data.length === 0) {
@@ -63,7 +62,6 @@ export class Updatexlsx extends React.Component {
                     this.setState({
                         data: json,
                         dataKey: keyObj
-
                     })
                 } else {
                     json.forEach((item) => {
@@ -72,9 +70,8 @@ export class Updatexlsx extends React.Component {
 
                         })
                     })
-
                 }
-
+                
                 options.onSuccess();
                 this.checkValue(this.props.rules)
 
@@ -85,11 +82,8 @@ export class Updatexlsx extends React.Component {
         }
     }
     componentDidUpdate() {
-
-
     }
     componentWillUnmount() {
-
     }
     onRemove() {
         this.setState({
@@ -97,14 +91,12 @@ export class Updatexlsx extends React.Component {
             dataKey: []
 
         })
-
     }
     updateData() {
-
         try {
             axios.post(this.props.backendUrl, {
                 data: this.state.canUpdateData,
-                key: this.state.dataKey,
+                key: this.props.rules,
                 time: new Date()
             }).then((res) => {
                 let successInfo = "成功"
@@ -116,15 +108,13 @@ export class Updatexlsx extends React.Component {
                     message.error({ content: res.status, errorInfo, duration: 2 })
                 }
             }
-
-
             )
         } catch (e) {
             message.error(e);
         }
 
     }
-    checkValue(rules){
+    checkValue(rules) {
         var dataSoure = [];
         // eslint-disable-next-line no-cond-assign
         if (this.state.data.length !== 0) {
@@ -135,20 +125,14 @@ export class Updatexlsx extends React.Component {
                 for (i = 0; i < rules.length; i++) {
                     console.log(i);
                     if (rules[i] === this.state.dataKey[i]) {
-                        
+
                     }
                     else {
-
                         flag = false
-                       
                         message.error({ content: '读取失败' + rules[i] + '不与表中' + this.state.dataKey[i] + '相同', msgkey, duration: 3 });
-                      break;
-
+                        break;
                     }
                 }
-
-
-              
                 if (flag) {
                     var keyValue = 0;
                     this.state.data.forEach((obj) => {
@@ -158,19 +142,15 @@ export class Updatexlsx extends React.Component {
                         })
                         keyValue++
                     });
-                  
+
                     this.setState({
-                        columnsValue:dataSoure,
-                        canUpdateData:this.state.data           
+                        columnsValue: dataSoure,
+                        canUpdateData: this.state.data
                     })
-                    
+
                     message.success({ content: '读取成功', msgkey, duration: 2 });
                     this.onRemove();
-                    
 
-
-                  
-                 
                 } else {
                     this.onRemove();
                 }
@@ -179,39 +159,20 @@ export class Updatexlsx extends React.Component {
                 this.onRemove()
             }
         }
-    
-
     }
 
-    
-
-
-
-
-
     render() {
-
         return (
             <>
                 <Upload name="excel" listType="text" onRemove={this.onRemove} customRequest={this.loadxlsx} accept="file" showUploadList={this.props.showUploadList}>
-
                     <Button>
                         点击选择报表
-
                     </Button>
-
                 </Upload>
-                <XlsxTable dataKey={this.props.rules} columnsValue={this.state.columnsValue}/>
-                <Button onClick={()=>this.updateData()}>点击上传</Button>
-
-
+                <XlsxTable dataKey={this.props.rules} columnsValue={this.state.columnsValue} />
+                <Button onClick={() => this.updateData()}>点击上传</Button>
             </>
-
-
         )
     }
-
-
-
 }
 
